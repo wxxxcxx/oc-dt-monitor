@@ -1,31 +1,29 @@
+use std::ffi::OsStr;
 use std::process::Command;
-use std::{ffi::OsStr, ops::Deref};
 
-use serde_json::{json, Value};
+use serde_json::Value;
 use thiserror::Error;
 
-use chrono::{DateTime, Datelike, Duration, TimeZone, Utc};
+use chrono::{DateTime, Datelike, TimeZone, Utc};
 use tracing::debug;
 
 #[derive(Error, Debug)]
 pub enum Error {
-    #[error("format error")]
+    #[error("Failed to format data")]
     FormatError(#[from] serde_json::Error),
-    #[error("encode error")]
+    #[error("Failed to encode data")]
     EncodeError(#[from] std::string::FromUtf8Error),
-    #[error("io error")]
+    #[error("IO error")]
     IOError(#[from] std::io::Error),
-    #[error("server error `{0}`")]
+    #[error("The server returned an error `{0}`")]
     ServerError(String),
-    #[error("command error `{0}`")]
+    #[error("Command execution failed: `{0}`")]
     CommandError(String),
-    #[error("unknown error")]
+    #[error("Unknown error")]
     FieldNotFound(String),
-    #[error("unknown error")]
-    Unknown,
 }
 
-type Result<T> = std::result::Result<T, Error>;
+pub type Result<T> = std::result::Result<T, Error>;
 
 fn get_month_start() -> DateTime<Utc> {
     let now = Utc::now();
@@ -50,13 +48,27 @@ where
     let output = command.output()?;
     let response = String::from_utf8(output.stdout)?;
     if response.is_empty() {
-        Err(Error::CommandError(String::from_utf8(output.stderr)?))
+        let result = String::from_utf8(output.stderr)?;
+        match result.strip_prefix("ServiceError:") {
+            Some(result) => {
+                let value: Value = serde_json::from_str(&result)?;
+                let message = value
+                    .get("message")
+                    .and_then(|value| value.as_str())
+                    .and_then(|value| Some(value.to_string()))
+                    .ok_or(Error::ServerError("Unknown server error".to_string()))?;
+                Err(Error::ServerError(message))
+            }
+            None => Err(Error::CommandError(result)),
+        }
     } else {
         Ok(response)
     }
 }
 
 pub struct OracleCloud {
+    tenant_id: String,
+    path: String,
     config: String,
 }
 
@@ -65,30 +77,23 @@ impl OracleCloud {
         debug!("execute command: {}", command.join(" "));
         let result = execute(&command)?;
         debug!("result {}", result);
-        match result.strip_prefix("ServiceError:") {
-            Some(result) => {
-                let value: Value = serde_json::from_str(&result)?;
-                let message = value
-                    .get("message")
-                    .and_then(|value| value.as_str())
-                    .and_then(|value| Some(value.to_string()))
-                    .ok_or(Error::ServerError("Unknown Error".to_string()))?;
-                Err(Error::ServerError(message))
-            }
-            None => {
-                let value = serde_json::from_str(&result)?;
-                Ok(value)
-            }
+
+        let value = serde_json::from_str(&result)?;
+        Ok(value)
+    }
+
+    pub fn new(tenant_id: String, path: String, config: String) -> Self {
+        Self {
+            tenant_id,
+            path,
+            config,
         }
     }
 
-    pub fn new(config: String) -> Self {
-        Self { config }
-    }
-
+    #[allow(unused)]
     pub fn list_compartment(&self) -> Result<Vec<String>> {
         let command = vec![
-            "oci",
+            self.path.as_str(),
             "iam",
             "compartment",
             "list",
@@ -112,16 +117,16 @@ impl OracleCloud {
             .ok_or(Error::FieldNotFound("compartment-id".to_string()))
     }
 
-    pub fn list_instances(&self, compartment_id: &str) -> Result<Vec<(String, String, String)>> {
+    pub fn list_instances(&self) -> Result<Vec<(String, String, String)>> {
         let command = vec![
-            "oci",
+            self.path.as_str(),
             "compute",
             "instance",
             "list",
             "--config-file",
             &self.config,
             "--compartment-id",
-            compartment_id,
+            &self.tenant_id,
         ];
         let json = self.invoke(command)?;
         json.get("data")
@@ -148,18 +153,18 @@ impl OracleCloud {
             .ok_or(Error::FieldNotFound("id".to_string()))
     }
 
-    pub fn query_data_transfer(&self, tenant_id: &str) -> Result<f64> {
+    pub fn query_data_transfer(&self) -> Result<f64> {
         let month_start = get_month_start().to_rfc3339();
         let month_end = get_month_end().to_rfc3339();
         let command = vec![
-            "oci",
+            self.path.as_str(),
             "usage-api",
             "usage-summary",
             "request-summarized-usages",
             "--granularity",
             "MONTHLY",
             "--tenant-id",
-            tenant_id,
+            &self.tenant_id,
             "--time-usage-started",
             &month_start,
             "--time-usage-ended",
@@ -189,10 +194,14 @@ impl OracleCloud {
             .ok_or(Error::FieldNotFound("Outbound Data Transfer".to_string()))
     }
 
-    pub fn stop_instance(&self, instance_id: &str, soft_stop: bool) -> Result<()> {
-        let action = if soft_stop { "SOFTSTOP" } else { "STOP" };
+    pub fn stop_instance(&self, instance_id: &str, stop_method: &str) -> Result<()> {
+        let action = match stop_method {
+            "soft" => "SOFTSTOP",
+            "hard" => "STOP",
+            _ => return Err(Error::CommandError("Invalid stop option".to_string())),
+        };
         let command = vec![
-            "oci",
+            self.path.as_str(),
             "compute",
             "instance",
             "action",
@@ -206,10 +215,4 @@ impl OracleCloud {
         self.invoke(command)?;
         Ok(())
     }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    const config: &str = "~/.oci/config";
 }
