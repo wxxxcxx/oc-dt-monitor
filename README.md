@@ -27,13 +27,12 @@ USAGE:
     oc-dt-monitor [FLAGS] [OPTIONS] --tenant-id <tenant-id> [SUBCOMMAND]
 
 FLAGS:
-        --clean    Use clean output (Only output the used data transfer)
-    -d, --debug    Activate debug mode
-    -h, --help     Prints help information
+    -a, --auto-stop    Stop instance(s) when the data transfer reaches the threshold
+        --clean        Use clean output (Only output the used data transfer)
+    -d, --debug        Activate debug mode
+    -h, --help         Prints help information
 
 OPTIONS:
-    -a, --auto-stop <auto-stop>        Stop instance(s) when the data transfer reaches the threshold [env:
-                                       OCDTM_AUTO_STOP=]
     -c, --config <config>              The oci config path [env: OCDTM_CONFIG=]  [default: ~/.oci/config]
         --instances <instances>...     Instance ids that need to be stopped, if not specified, all instances will be
                                        stopped by default [env: OCDTM_STOP_INSTANCES=]

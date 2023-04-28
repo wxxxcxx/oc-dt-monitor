@@ -42,7 +42,7 @@ pub struct Opt {
     pub tenant_id: String,
 
     /// Stop instance(s) when the data transfer reaches the threshold
-    #[structopt(env = "OCDTM_AUTO_STOP", short, long)]
+    #[structopt(short, long)]
     pub auto_stop: bool,
 
     /// Instance ids that need to be stopped, if not specified, all instances will be stopped by default
