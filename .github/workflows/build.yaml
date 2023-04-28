@@ -44,6 +44,6 @@ jobs:
     - name: Upload Artifact
       uses: actions/upload-artifact@v3
       with:
-        name: ${{ env.NAME }}-${{ matrix.target-triple }}${{ runner.os == 'Windows' && '.exe' || '' }}
+        name: ${{ env.NAME }}-${{ matrix.target-triple }}
         path: ./target/${{ matrix.target-triple }}/release/${{ env.NAME }}${{ runner.os == 'Windows' && '.exe' || '' }}
     
