@@ -11,9 +11,9 @@ use tracing::debug;
 pub enum Error {
     #[error("Failed to format data")]
     FormatError(#[from] serde_json::Error),
-    #[error("Failed to encode data")]
+    #[error("Failed to encode data, {0}")]
     EncodeError(#[from] std::string::FromUtf8Error),
-    #[error("IO error")]
+    #[error("IO error, {0}")]
     IOError(#[from] std::io::Error),
     #[error("The server returned an error `{0}`")]
     ServerError(String),
