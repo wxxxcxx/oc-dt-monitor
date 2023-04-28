@@ -1,0 +1,56 @@
+name: Rust CI
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+
+jobs:
+
+  build-and-test:
+    strategy:
+      matrix:
+        os: [macos-latest, ubuntu-latest, windows-latest]
+        rust-version: [stable]
+        include:
+          - os: macos-latest
+            target-triple: x86_64-apple-darwin
+          - os: macos-latest
+            target-triple: arm64-apple-darwin
+          - os: ubuntu-latest
+            target-triple: x86_64-unknown-linux-gnu
+          - os: ubuntu-latest
+            target-triple: arm-unknown-linux-gnueabi
+          - os: windows-latest
+            target-triple: x86_64-pc-windows-msvc
+    runs-on: ${{ matrix.os }}
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Install Rust
+      uses: actions-rs/toolchain@v1
+      with:
+        profile: minimal
+        toolchain: ${{ matrix.rust-version }}
+
+    - name: Build and Test
+      run: cargo test --target ${{ matrix.target-triple }}
+
+    - name: Package for Release
+      if: startsWith(github.ref, 'refs/tags/')
+      run: cargo build --release --target ${{ matrix.target-triple }}
+
+    - name: Upload Release Asset
+      if: startsWith(github.ref, 'refs/tags/')
+      uses: actions/upload-release-asset@v1
+      with:
+        asset_path: ./target/${{ matrix.target-triple }}/release/oc-dt-monitor
+        asset_name: my-project-${{ matrix.os }}-${{ matrix.rust-version }}-${{ matrix.target-triple }}
+        tag_name: ${{ github.ref }}
+        overwrite: true
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
