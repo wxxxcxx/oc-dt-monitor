@@ -2,48 +2,59 @@ name: Rust CI
 
 on:
   push:
-    branches: [ master ]
+    branches: [master]
   pull_request:
-    branches: [ master ]
-
+    branches: [master]
 
 jobs:
   build-and-test:
     strategy:
       matrix:
-        os: [macos-latest, ubuntu-latest, windows-latest]
-        rust-version: [stable]
         include:
           - os: macos-latest
+            rust-version: stable
+            run-test: true
             target-triple: x86_64-apple-darwin
           - os: ubuntu-latest
+            rust-version: stable
+            run-test: true
             target-triple: x86_64-unknown-linux-musl
+          - os: ubuntu-latest
+            rust-version: stable
+            run-test: false
+            target-triple: aarch64-unknown-linux-musl
           - os: windows-latest
+            rust-version: stable
+            run-test: true
             target-triple: x86_64-pc-windows-msvc
     runs-on: ${{ matrix.os }}
+
     env:
       NAME: oc-dt-monitor
 
-
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v3
+      - name: Checkout repository
+        uses: actions/checkout@v3
 
-    - name: Install Rust
-      uses: dtolnay/rust-toolchain@stable
-      with:
-        toolchain: ${{ matrix.rust-version }}
-        targets: ${{ matrix.target-triple }}
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: ${{ matrix.rust-version }}
+          targets: ${{ matrix.target-triple }}
 
-    - name: Build and Test
-      run: cargo test --target ${{ matrix.target-triple }}
+      - name: Install Dependencies
+        if: ${{ matrix.target-triple == 'aarch64-unknown-linux-musl' }}
+        run: sudo apt update && sudo apt install -y gcc-aarch64-linux-gnu
 
-    - name: Package for Release
-      run: cargo build --release --target ${{ matrix.target-triple }}
+      - name: Build and Test
+        if: ${{ matrix.run-test }}
+        run: cargo test --target ${{ matrix.target-triple }}
 
-    - name: Upload Artifact
-      uses: actions/upload-artifact@v3
-      with:
-        name: ${{ env.NAME }}-${{ matrix.target-triple }}
-        path: ./target/${{ matrix.target-triple }}/release/${{ env.NAME }}${{ runner.os == 'Windows' && '.exe' || '' }}
-    
+      - name: Package for Release
+        run: cargo build --release --target ${{ matrix.target-triple }}
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ env.NAME }}-${{ matrix.target-triple }}
+          path: ./target/${{ matrix.target-triple }}/release/${{ env.NAME }}${{ runner.os == 'Windows' && '.exe' || '' }}
