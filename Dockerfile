@@ -26,4 +26,4 @@ RUN bash -c "$(curl -L https://raw.githubusercontent.com/oracle/oci-cli/master/s
 
 COPY --from=builder /oc-dt-monitor/target/release/oc-dt-monitor /oc-dt-monitor/oc-dt-monitor
 
-CMD ["/usr/bin/oc-dt-monitor", "--auto-stop", "start"]
+CMD ["/oc-dt-monitor/oc-dt-monitor", "--auto-stop", "start"]
