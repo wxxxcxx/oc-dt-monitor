@@ -9,7 +9,7 @@ use tracing::debug;
 
 #[derive(Error, Debug)]
 pub enum Error {
-    #[error("Failed to format data")]
+    #[error("Failed to format data, {0}")]
     FormatError(#[from] serde_json::Error),
     #[error("Failed to encode data, {0}")]
     EncodeError(#[from] std::string::FromUtf8Error),

@@ -10,7 +10,7 @@ FROM debian:latest
 
 WORKDIR /oc-dt-monitor
 
-ENV OCDTM_CONFIG=/oc-dt-monitor/config/config.yaml \
+ENV OCDTM_CONFIG=/oc-dt-monitor/config/config \
     OCDTM_EXECUTABLE=/root/bin/oci \
     OCDTM_STOP_METHOD=soft \
     OCDTM_TENANT_ID= \
