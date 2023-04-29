@@ -1,13 +1,13 @@
 # oc-dt-monitor
-
-oc-dt-monitor 是一个用于监测 Oracle Cloud 数据传输用量的应用。
-oc-dt-monitor 可以周期性的检测 Oracle Cloud 的数据传输用量，并且可以在数据传输用量超出设定的值后自动停止实例防止扣费。
+oc-dt-monitor 可以周期性的检测 Oracle Cloud 的数据传输用量，并且可以在数据传输用量超出设定的值后自动停止实例，防止扣费。
 
 ## 使用
 
 1. 安装 oracle 提供的 oci 终端工具，在个人资料->API keys 里创建一个API key，创建成功后下载密钥文件并保存配置文件（需要修改配置文件中的密钥文件的路径）。
-2. 使用 `oci compartment list --config-file <保存的配置文件路径>` 测试 oci 是否能够正确的连接上你的账户。看到正确的输出后进行下一步。
+2. 使用 `oci iam user list --config-file <保存的配置文件路径>` 测试 oci 是否能够正确的连接上你的账户。看到正确的输出后进行下一步。
 3. 使用命令 oc-dt-monitor --tenant-id <您的租户ID> 启动应用。
+
+详细步骤请参考：[Wiki](https://github.com/wxxxcxx/oc-dt-monitor/wiki/%E5%AE%89%E8%A3%85&%E4%BD%BF%E7%94%A8)
 
 ``` shell
 $ oc-dt-monitor --tenant-id <您的租户ID> # 启动应用
