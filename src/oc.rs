@@ -171,6 +171,8 @@ impl OracleCloud {
             &month_end,
             "--group-by",
             "[\"skuName\", \"skuPartNumber\", \"unit\", \"tenantName\"]",
+            "--config-file",
+            &self.config,
         ];
         let json = self.invoke(command)?;
         json.pointer("/data/items")
