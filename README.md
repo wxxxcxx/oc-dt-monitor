@@ -7,8 +7,6 @@ oc-dt-monitor 可以周期性的检测 Oracle Cloud 的数据传输用量，并�
 2. 使用 `oci iam user list --config-file <保存的配置文件路径>` 测试 oci 是否能够正确的连接上你的账户。看到正确的输出后进行下一步。
 3. 使用命令 oc-dt-monitor --tenant-id <您的租户ID> 启动应用。
 
-详细步骤请参考：[Wiki](https://github.com/wxxxcxx/oc-dt-monitor/wiki/%E5%AE%89%E8%A3%85&%E4%BD%BF%E7%94%A8)
-
 ``` shell
 $ oc-dt-monitor --tenant-id <您的租户ID> # 启动应用
 
@@ -47,3 +45,5 @@ SUBCOMMANDS:
     help     Prints this message or the help of the given subcommand(s)
     start    Start the monitor
 ```
+
+详细步骤请参考：[Wiki](https://github.com/wxxxcxx/oc-dt-monitor/wiki/%E5%AE%89%E8%A3%85&%E4%BD%BF%E7%94%A8)
