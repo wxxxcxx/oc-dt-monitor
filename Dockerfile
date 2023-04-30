@@ -15,7 +15,6 @@ ENV OCDTM_CONFIG=/oc-dt-monitor/config/config \
     OCDTM_STOP_METHOD=soft \
     OCDTM_TENANT_ID= \
     OCDTM_THRESHOLD=1000 \
-    OCDTM_STOP_INSTANCES= \
     OC_INTERVAL=3600
 
 VOLUME [ "/oc-dt-monitor/config" ]

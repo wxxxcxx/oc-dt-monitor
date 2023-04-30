@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use oc::OracleCloud;
 use structopt::StructOpt;
-use tracing::{info, warn, Level};
+use tracing::{info, warn, Level, debug};
 use tracing_subscriber::FmtSubscriber;
 
 mod oc;
@@ -96,7 +96,7 @@ fn main() {
         .with_max_level(if opt.debug { Level::TRACE } else { Level::WARN })
         .finish();
     tracing::subscriber::set_global_default(subscriber).expect("setting default subscriber failed");
-
+    debug!("opt: {:?}", opt);
     let oc: oc::OracleCloud = oc::OracleCloud::new(
         opt.tenant_id.clone(),
         opt.path.to_str().unwrap().to_string(),
