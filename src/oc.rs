@@ -19,7 +19,7 @@ pub enum Error {
     ServerError(String),
     #[error("Command execution failed: `{0}`")]
     CommandError(String),
-    #[error("Unknown error")]
+    #[error("Field not found: `{0}`")]
     FieldNotFound(String),
 }
 
@@ -154,6 +154,55 @@ impl OracleCloud {
     }
 
     pub fn query_data_transfer(&self) -> Result<f64> {
+        let month_start = get_month_start().to_rfc3339();
+        let month_end = get_month_end().to_rfc3339();
+        let command = vec![
+            self.path.as_str(),
+            "monitoring",
+            "metric-data",
+            "summarize-metrics-data",
+            "--compartment-id",
+            &self.tenant_id,
+            "--namespace",
+            "oci_vcn",
+            "--query-text",
+            "VnicToNetworkBytes[1d].sum()",
+            "--start-time",
+            &month_start,
+            "--end-time",
+            &month_end,
+            "--config-file",
+            &self.config,
+        ];
+        let json = self.invoke(command)?;
+
+        let bytes = json
+            .get("data")
+            .and_then(|datas| datas.as_array())
+            .and_then(|datas| {
+                datas
+                    .iter()
+                    .map(|data| {
+                        data.get("aggregated-datapoints")
+                            .and_then(|points| points.as_array())
+                            .and_then(|points| {
+                                points
+                                    .iter()
+                                    .map(|point| {
+                                        point.get("value").and_then(|value| value.as_f64())
+                                    })
+                                    .sum::<Option<f64>>()
+                            })
+                    })
+                    .sum::<Option<f64>>()
+            })
+            .ok_or(Error::FieldNotFound("value".to_string()))?;
+        let result = bytes / 1024.0 / 1024.0 / 1024.0;
+        Ok(result)
+    }
+
+    #[allow(unused)]
+    pub fn query_data_transfer_summary(&self) -> Result<f64> {
         let month_start = get_month_start().to_rfc3339();
         let month_end = get_month_end().to_rfc3339();
         let command = vec![
